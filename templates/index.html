@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Background Remover</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: beige;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        max-width: 600px;
+        width: 100%;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 1.8rem;
+      }
+
+      .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+      }
+
+      .drop-zone {
+        border: 3px dashed #ccc;
+        border-radius: 15px;
+        padding: 40px 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+      }
+
+      .drop-zone:hover {
+        border-color: #667eea;
+        background: #f8f9ff;
+      }
+
+      .drop-zone.dragover {
+        border-color: #667eea;
+        background: #f0f2ff;
+      }
+
+      .drop-zone.has-image {
+        border-style: solid;
+        border-color: #667eea;
+        padding: 20px;
+      }
+
+      .drop-zone p {
+        color: #888;
+        font-size: 1.1rem;
+      }
+
+      .drop-zone .icon {
+        font-size: 3rem;
+        margin-bottom: 10px;
+      }
+
+      #fileInput {
+        display: none;
+      }
+
+      #preview {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 10px;
+        display: none;
+      }
+
+      #preview.show {
+        display: block;
+        margin: 0 auto;
+      }
+
+      .filename {
+        color: #667eea;
+        font-weight: 600;
+        margin-top: 10px;
+        word-break: break-all;
+      }
+
+      .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: none;
+      }
+
+      .btn.show {
+        display: inline-block;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .change-btn {
+        background: none;
+        border: none;
+        color: #667eea;
+        cursor: pointer;
+        margin-top: 15px;
+        font-size: 0.9rem;
+        text-decoration: underline;
+      }
+
+      .change-btn:hover {
+        color: #764ba2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🐱 Meow Background Remover</h1>
+      <p class="subtitle">Meow will remove the background for you</p>
+
+      <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
+        <div id="dropZone" class="drop-zone">
+          <div id="placeholder">
+            <div class="icon"></div>
+            <p>Drag & drop an image here<br>or click to select</p>
+          </div>
+          <img id="preview" alt="Preview">
+          <p id="filename" class="filename"></p>
+        </div>
+        
+        <input id="fileInput" type="file" name="file" accept="image/*">
+        <button type="submit" id="removeBtn" class="btn">✨ Remove Background</button>
+        <br>
+        <button type="button" id="changeBtn" class="change-btn" style="display: none;">Choose different image</button>
+      </form>
+    </div>
+
+    <script>
+      const dropZone = document.getElementById("dropZone");
+      const fileInput = document.getElementById("fileInput");
+      const uploadForm = document.getElementById("uploadForm");
+      const preview = document.getElementById("preview");
+      const placeholder = document.getElementById("placeholder");
+      const filename = document.getElementById("filename");
+      const removeBtn = document.getElementById("removeBtn");
+      const changeBtn = document.getElementById("changeBtn");
+
+      // Click to select file
+      dropZone.addEventListener("click", function (e) {
+        if (e.target !== changeBtn) {
+          fileInput.click();
+        }
+      });
+
+      // Handle file selection
+      fileInput.addEventListener("change", function () {
+        if (fileInput.files.length > 0) {
+          showPreview(fileInput.files[0]);
+        }
+      });
+
+      // Drag events
+      dropZone.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.classList.add("dragover");
+      });
+
+      dropZone.addEventListener("dragleave", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.classList.remove("dragover");
+      });
+
+      dropZone.addEventListener("drop", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.classList.remove("dragover");
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type.startsWith('image/')) {
+          fileInput.files = files;
+          showPreview(files[0]);
+        }
+      });
+
+      // Show image preview
+      function showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          preview.src = e.target.result;
+          preview.classList.add("show");
+          placeholder.style.display = "none";
+          filename.textContent = file.name;
+          dropZone.classList.add("has-image");
+          removeBtn.classList.add("show");
+          changeBtn.style.display = "inline-block";
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // Change image button
+      changeBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        fileInput.value = "";
+        preview.src = "";
+        preview.classList.remove("show");
+        placeholder.style.display = "block";
+        filename.textContent = "";
+        dropZone.classList.remove("has-image");
+        removeBtn.classList.remove("show");
+        changeBtn.style.display = "none";
+        fileInput.click();
+      });
+
+      // Form submit
+      uploadForm.addEventListener("submit", function () {
+        removeBtn.disabled = true;
+        removeBtn.textContent = "⏳ Processing...";
+      });
+    </script>
+  </body>
+</html>
